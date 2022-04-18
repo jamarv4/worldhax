@@ -9,6 +9,9 @@
 // TODO: Electron GUI
 // TODO: Listen for keyup events even when not in focus
 
+// TODO: Convert to 'Unit' Class
+// over-enginering? Trace offset arrays using reduce
+
 const { clone } = require('lodash');
 const { to } = require('await-to-js');
 const { memory } = require('jsmeow');
@@ -36,13 +39,14 @@ async function getBaseModuleAddress() {
     return modBaseAddr;
 }
 
+// NOT USED
 function readBytesFromAddress(address, size = 4) {
     const bytes = memory.readBuffer(parseInt(Buffer.from(address), 16), size)
     console.log({address, bytes}, 'read bytes');
     return bytes;
 }
 
-//(address + offset).toString(16)
+// (address + offset).toString(16)
 
 function jumpToPointer (address, offset, completed = false) {
     console.log(
