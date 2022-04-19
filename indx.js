@@ -28,6 +28,7 @@ const SELECTED_UNIT_PROPERTIES_OFFSET = [...SELECTED_UNIT_OFFSET, 0x158];
 const SELECTED_UNIT_HEALTH_OFFSET = [...SELECTED_UNIT_PROPERTIES_OFFSET, 0x14];
 const SELECTED_UNIT_HUNGER_OFFSET = [...SELECTED_UNIT_PROPERTIES_OFFSET, 0x8c];
 
+const intel = [...SELECTED_UNIT_ATTRIBUTES_OFFSET, 0x2c];
 
 
 
@@ -55,7 +56,8 @@ function jumpToPointer (address, offset, completed = false) {
         'offset',
         '0x' + (offset).toString(16),
         `dest address: ${'0x' + (address+offset).toString(16)}`,
-        `completed: ${completed}`
+        `completed: ${completed}`,
+        `remaining offset: ${offset}`
     )
     // console.log('0x' + (address+offset).toString(16))
     const nextAddressString = (address+offset).toString(16);
@@ -114,7 +116,12 @@ async function traceOffsets(offsetsArray) {
 
 async function main() {
 
-    console.log(SELECTED_UNIT_HEALTH_OFFSET)
+    console.log({
+        SELECTED_UNIT_HUNGER_OFFSET,
+        SELECTED_UNIT_HEALTH_OFFSET,
+        SELECTED_UNIT_OFFSET,
+        SELECTED_UNIT_PROPERTIES_OFFSET,
+    })
     traceOffsets(SELECTED_UNIT_HUNGER_OFFSET);
 }
 
