@@ -1,81 +1,6 @@
 const {memory} = require('jsmeow');
 const {clone, concat} = require('lodash');
-
-const offsetConfig = {
-    processName: 'worldbox.exe',
-    baseModuleName: 'mono-2.0-bdwgc.dll',
-    baseModuleOffset: 0x004A86B8,
-    attributesBaseOffset: [0xA0],
-    propertiesBaseOffset: [0x158],
-    selectedUnitOffset: [0x318, 0xFA0],
-    items: {
-        health: {
-            offset: [0x14],
-            type: 'properties',
-        },
-        hunger: {
-            offset: [0x8c],
-            type: 'properties',
-        },
-        kills: {
-            offset: [0x7c],
-            type: 'properties',
-        },
-        level: {
-            offset: [0x90],
-            type: 'properties',
-        },
-        experience: {
-            offset: [0x94],
-            type: 'properties',
-        },
-        age: {
-            offset: [0x80],
-            type: 'properties',
-        },
-        maxHealth: {
-            offset: [0x4c],
-            type: 'attributes',
-        },
-        armor: {
-            offset: [0x50],
-            type: 'attributes',
-        },
-        criticalHit: {
-            offset: [0x64],
-            type: 'attributes',
-        },
-        attackSpeed: {
-            offset: [0x78],
-            type: 'attributes',
-        },
-        damage: {
-            offset: [0x44],
-            type: 'attributes',
-        },
-        intelligence: {
-            offset: [0x2c],
-            type: 'attributes',
-        },
-        stewardship: {
-            offset: [0x28],
-            type: 'attributes',
-        },
-        diplomacy: {
-            offset: [0x20],
-            type: 'attributes',
-        },
-        warfare: {
-            offset: [0x24],
-            type: 'attributes',
-        },
-        speed: {
-            offset: [0x48],
-            type: 'attributes',
-        }
-    },
-}
-
+const config = require('../offsets');
 
 function jumpToAddress (address, offset, completed = false) {
     const nextAddressString = (address+offset).toString(16);
@@ -86,17 +11,14 @@ function jumpToAddress (address, offset, completed = false) {
         : memory.readBuffer(nextAddress, 8);
 }; 
 
-function getBaseModuleAddress() {
-    const { th32ProcessID } = memory.openProcess(offsetConfig.processName);
-    const { modBaseAddr } = memory.findModule(offsetConfig.baseModuleName, th32ProcessID);
-
-    return modBaseAddr;
-}
 
 // Traces offsets array to last element
 // returns address to read/write
 function traceOffsets(offsetsArray) {
     {
+        const { th32ProcessID } = memory.openProcess(config.processName);
+        const { modBaseAddr } = memory.findModule(config.baseModuleName, th32ProcessID);
+
         let jumpAddress;
         let offsets = clone(offsetsArray);
         let result = {
@@ -112,7 +34,7 @@ function traceOffsets(offsetsArray) {
             if (!offset && !offsets.length) break;
 
             if (i === 0)  {
-                jumpAddress = jumpToAddress(getBaseModuleAddress(), offset, isCompleted);
+                jumpAddress = jumpToAddress(modBaseAddr, offset, isCompleted);
             } else {
                 if (isCompleted) {
                     result.decimalAddress = jumpAddress + offset;
@@ -130,19 +52,19 @@ function traceOffsets(offsetsArray) {
 
 
 class Unit {
-    constructor(offsetConfig) {
-        this.processName = offsetConfig.processName;
-        this.baseModuleName = offsetConfig.baseModuleName;
-        this.baseModuleOffset = offsetConfig.baseModuleOffset;
-        this.items = offsetConfig.items;
+    constructor(config) {
+        this.processName = config.processName;
+        this.baseModuleName = config.baseModuleName;
+        this.baseModuleOffset = config.baseModuleOffset;
+        this.items = config.items;
         this.attributesBaseOffset = [0xA0];
         this.propertiesBaseOffset =[0x158];
         this.selectedUnitOffset = [0x318, 0xFA0];
         
-        this.initialize(offsetConfig);
+        this.initialize();
     }
 
-    createOffsets (item) {
+    addItem (item) {
         let itemOffset = null;
 
         if (item.type === 'properties') {
@@ -168,15 +90,14 @@ class Unit {
             Object.defineProperties(this, {
                 [itemName]: {
                     get: function() {
-                        const offset = this.createOffsets(this.items[itemName]);
+                        const offset = this.addItem(this.items[itemName]);
                         const destination = traceOffsets(offset);
                        
                         return destination.bytes[0];
                     },
                     set: function (value) {
-                        const offset = this.createOffsets(this.items[itemName]);
+                        const offset = this.addItem(this.items[itemName]);
                         const destination = traceOffsets(offset);
-
 
                         memory.writeBuffer(
                             destination.decimalAddress,
@@ -191,15 +112,5 @@ class Unit {
         });
     }
 }
-
-const unit = new Unit(offsetConfig);
-
-
-unit.hunger = 100;
-console.log(
-    unit.maxHealth
-)
-
-
 
 module.exports = Unit;

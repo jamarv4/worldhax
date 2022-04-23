@@ -20,6 +20,7 @@
     "await-to-js": "^3.0.0",
     "hexyjs": "^2.1.4",
     "jsmeow": "^1.0.9",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "node-global-key-listener": "^0.0.14"
   }
 }
